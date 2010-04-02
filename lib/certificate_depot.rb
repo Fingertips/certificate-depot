@@ -2,7 +2,8 @@ require 'openssl'
 require 'fileutils'
 
 class CertificateDepot
-  autoload :Runner, 'certificate_depot/runner'
+  autoload :Keypair, 'certificate_depot/keypair'
+  autoload :Runner,  'certificate_depot/runner'
   
   def initialize(path)
     config_filename = File.join(path, 'openssl.cnf')
