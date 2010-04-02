@@ -6,5 +6,5 @@ Lightweight library to manage server and client certificates used to TLS. It's b
 
 If you want to use the CA (Certificate Authority) functionality you need to setup a directory with some configuration and database files.
 
-  $ depot init /var/lib/certificate-depot/example-ca
+  $ depot init /tmp/example-ca Example Certificate Authority
 

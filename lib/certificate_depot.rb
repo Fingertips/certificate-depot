@@ -1,4 +1,5 @@
 require 'openssl'
+require 'fileutils'
 
 class CertificateDepot
   autoload :Runner, 'certificate_depot/runner'
@@ -22,7 +23,6 @@ default_ca     = #{label}
 [ #{label} ]
 dir            = #{path}")
     end
-    
     new(path)
   end
   
