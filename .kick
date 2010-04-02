@@ -1,0 +1,21 @@
+recipe :ruby
+
+class Ruby
+  def self.is_test_file?(path)
+    path if File.exist?(File.expand_path("../#{path}", __FILE__))
+  end
+end
+
+recipe :ruby
+process do |files|
+  Ruby.run_tests(files.take_and_map do |file|
+    case file
+    when %r{^lib/(.+)\.rb$}
+      path = $1.gsub('/', '_')
+      [
+        Ruby.is_test_file?("test/unit/#{path}_test.rb"),
+        Ruby.is_test_file?("test/functional/#{path}_test.rb")
+      ].compact
+    end
+  end)
+end
