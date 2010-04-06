@@ -45,12 +45,15 @@ dir            = #{path}")
     File.open(File.join(path, 'serial'), 'w') { |file| file.write("01\n") }
   end
   
-  def self.create_ca_certificate(path)
-     keypair = CertificateDepot::Keypair.generate
-     keypair.write_to(key_path(path))
-     
-     certificate = CertificateDepot::Certificate.generate(keypair.public_key)
-     certificate.write_to(certificate_path(path))
+  def self.create_ca_certificate(path, label)
+    keypair = CertificateDepot::Keypair.generate
+    keypair.write_to(key_path(path))
+    
+    certificate = CertificateDepot::Certificate.generate(
+      :public_key => keypair.public_key,
+      :organization => label
+    )
+    certificate.write_to(certificate_path(path))
   end
   
   def self.create(path, label)
@@ -58,7 +61,7 @@ dir            = #{path}")
     create_configuration(path, label)
     create_index(path)
     create_serial(path)
-    create_ca_certificate(path)
+    create_ca_certificate(path, label)
     new(path)
   end
   

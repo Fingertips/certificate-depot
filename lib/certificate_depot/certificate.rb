@@ -9,10 +9,12 @@ class CertificateDepot
       @certificate = certificate
     end
     
-    def generate(public_key)
+    def generate(attributes={})
       from         = Time.now
       to           = Time.now + DEFAULT_VALIDITY_PERIOD
-      name         = OpenSSL::X509::Name.parse('/C=NL/O=Fingertips/CN=Manfred Stienstra/emailAddress=manfred@fngtps.com')
+      
+      name         =  OpenSSL::X509::Name.new
+      name.add_entry('O', attributes[:organization])
       
       @certificate = OpenSSL::X509::Certificate.new
       @certificate.subject    = name
@@ -20,7 +22,7 @@ class CertificateDepot
       @certificate.not_before = from
       @certificate.not_after  = to
       @certificate.version    = X509v3
-      @certificate.public_key = public_key
+      @certificate.public_key = attributes[:public_key]
     end
     
     def write_to(path)
@@ -34,6 +36,16 @@ class CertificateDepot
     
     def issuer
       @certificate.issuer
+    end
+    
+    def organization
+      self['O']
+    end
+    
+    def [](key)
+      @certificate.issuer.to_a.each do |name, value, type|
+        return value if name == key
+      end
     end
     
     def self.generate(public_key)
