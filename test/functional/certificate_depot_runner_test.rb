@@ -13,7 +13,6 @@ describe "CertificateDepot::Runner, concerning the commandline utility" do
     CertificateDepot.new(path).label.should == 'Certificate Depot Test'
   end
   
-  
   private
   
   def runner(argv)

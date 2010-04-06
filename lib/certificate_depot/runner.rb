@@ -9,10 +9,12 @@ class CertificateDepot
     
     def parser
       @parser ||= OptionParser.new do |opts|
-        opts.banner =  "Usage: depot [command]"
+        opts.banner =  "Usage: depot [command] [options]"
         opts.separator ""
         opts.separator "Commands:"
-        opts.separator "    init <path> [name]     - create a new depot on disk"
+        opts.separator "    init <path> [name]     - Create a new depot on disk"
+        opts.separator "          You probably want to run init as root to make"
+        opts.separator "          sure your keys will be safe."
         opts.separator ""
         opts.separator "Options:"
         opts.on("-h", "--help", "Show help") do

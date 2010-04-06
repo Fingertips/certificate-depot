@@ -16,6 +16,10 @@ class CertificateDepot
       @private_key.public_key
     end
     
+    def write_to(path)
+      File.open(path, 'w') { |file| file.write(@private_key.to_pem) }
+    end
+    
     def self.generate
       keypair = new
       keypair.generate
