@@ -14,6 +14,24 @@ class CertificateDepot
     @config['ca']['default_ca']
   end
   
+  def path
+    @config[label]['dir']
+  end
+  
+  def ca_certificate
+    @ca_certificate ||= CertificateDepot::Certificate.from_file(self.class.certificate_path(path))
+  end
+  
+  def generate_client_keypair_and_certificate(email_address)
+    keypair     = CertificateDepot::Keypair.generate
+    certificate = CertificateDepot::Certificate.generate(
+      :ca_certificate => ca_certificate,
+      :email_address => email_address,
+      :public_key => keypair.public_key
+    )
+    [keypair, certificate]
+  end
+  
   def self.create_directories(path)
     [
       private_path(path),
@@ -33,7 +51,16 @@ class CertificateDepot
 default_ca     = #{label}
 
 [ #{label} ]
-dir            = #{path}")
+dir            = #{path}
+certs          = #{certificates_path(path)}
+crl_dir        = #{certificates_revokation_list_path(path)}
+database       = #{File.join(path, 'index.txt')}
+new_certs_dir  = #{new_certificates_path(path)}
+
+certificate    = #{certificate_path(path)}
+serial         = #{File.join(path, 'serial')}
+crl            = #{File.join(path, 'crl.pem')}
+")
     end
   end
   

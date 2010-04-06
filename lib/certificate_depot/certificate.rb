@@ -75,5 +75,9 @@ class CertificateDepot
       certificate.generate(public_key)
       certificate
     end
+    
+    def self.from_file(path)
+      new(OpenSSL::X509::Certificate.new(File.read(path)))
+    end
   end
 end

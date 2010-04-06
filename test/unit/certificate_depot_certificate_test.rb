@@ -28,4 +28,12 @@ describe "CertificateDepot::Certificate" do
     
     certificate.issuer.to_s.should == @ca_certificate.subject.to_s
   end
+  
+  it "loads from file" do
+    path = File.join(temporary_directory, 'ca.crt')
+    @ca_certificate.write_to(path)
+    
+    certificate = CertificateDepot::Certificate.from_file(path)
+    certificate.organization.should == 'Certificate Depot Test'
+  end
 end
