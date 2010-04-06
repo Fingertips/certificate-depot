@@ -6,14 +6,12 @@ describe "CertificateDepot" do
     
     # Creates all directories
     File.should.exist(temporary_directory)
-    %w(private certificates new-certificates crl).each do |directory|
+    %w(private certificates).each do |directory|
       File.should.exist(File.join(temporary_directory, directory))
     end
     
     # Creates configuration and all database files
-    File.size(File.join(temporary_directory, 'openssl.cnf')).should > 0
-    File.size(File.join(temporary_directory, 'index.txt')).should == 0
-    File.size(File.join(temporary_directory, 'serial')).should > 0
+    File.size(File.join(temporary_directory, 'depot.cnf')).should > 0
     
     # Creates a key and self-signed certificate
     File.size(File.join(temporary_directory, 'private/ca.key')).should > 0
