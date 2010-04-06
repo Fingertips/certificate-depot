@@ -34,9 +34,14 @@ describe "CertificateDepot::Store, with certificates" do
   end
   
   it "syncs to disk" do
-    entries(@store.path).length.should == 0
-    @store.sync
     entries(@store.path).should == %w(1.crt 2.crt 3.crt)
+  end
+  
+  it "loads from disk" do
+    store = CertificateDepot.new(temporary_directory)
+    store.certificates.map do |certificate|
+      certificate.serial_number
+    end.sort.should == [1,2,3]
   end
   
   private

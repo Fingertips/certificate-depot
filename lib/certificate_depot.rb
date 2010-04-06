@@ -32,6 +32,7 @@ class CertificateDepot
       :serial_number => certificates.next_serial_number
     )
     certificates << certificate
+    certificates.sync
     [keypair, certificate]
   end
   
