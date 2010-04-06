@@ -5,7 +5,8 @@ class CertificateDepot
     
     ATTRIBUTE_MAP = {
       :organization  => 'O',
-      :email_address => 'emailAddress'
+      :email_address => 'emailAddress',
+      :common_name   => 'CN'
     }
     
     attr_accessor :certificate
@@ -41,12 +42,35 @@ class CertificateDepot
       @certificate.version    = X509v3
       @certificate.public_key = attributes[:public_key]
       @certificate.serial     = serial
+      
+      extensions = []
+      factory = OpenSSL::X509::ExtensionFactory.new
+      factory.subject_certificate = @certificate
+      
+      if attributes[:ca_certificate] # Client certificate
+        factory.issuer_certificate = attributes[:ca_certificate].certificate
+        extensions << factory.create_extension('basicConstraints', 'CA:FALSE', true)
+        extensions << factory.create_extension('keyUsage', 'nonRepudiation,digitalSignature,keyEncipherment')
+        extensions << factory.create_extension('extendedKeyUsage', 'clientAuth')
+      else # CA certificate
+        factory.issuer_certificate = @certificate
+        extensions << factory.create_extension('basicConstraints', 'CA:TRUE', true)
+        extensions << factory.create_extension('keyUsage', 'cRLSign,keyCertSign')
+      end
+      extensions << factory.create_extension('subjectKeyIdentifier', 'hash')
+      extensions << factory.create_extension('authorityKeyIdentifier', 'keyid,issuer:always')
+      
+      @certificate.extensions = extensions
+      
+      if attributes[:private_key]
+        @certificate.sign(attributes[:private_key], OpenSSL::Digest::SHA1.new)
+      end
+      
       @certificate
     end
     
     def write_to(path)
       File.open(path, 'w') { |file| file.write(@certificate.to_pem) }
-      File.chmod(0400, path)
     end
     
     def public_key

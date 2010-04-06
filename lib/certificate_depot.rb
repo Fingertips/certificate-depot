@@ -23,16 +23,20 @@ class CertificateDepot
     @ca_certificate ||= CertificateDepot::Certificate.from_file(self.class.certificate_path(path))
   end
   
-  def generate_client_keypair_and_certificate(email_address)
+  def generate_client_keypair_and_certificate(email_address, options={})
     keypair     = CertificateDepot::Keypair.generate
-    certificate = CertificateDepot::Certificate.generate(
-      :ca_certificate => ca_certificate,
-      :email_address => email_address,
-      :public_key => keypair.public_key,
-      :serial_number => certificates.next_serial_number
-    )
+    
+    attributes = options
+    attributes[:ca_certificate] = ca_certificate
+    attributes[:email_address]  = email_address
+    attributes[:public_key]     = keypair.public_key
+    attributes[:private_key]    = OpenSSL::PKey::RSA.new(File.read(self.class.key_path(path)))
+    attributes[:serial_number]  = certificates.next_serial_number
+    certificate = CertificateDepot::Certificate.generate(attributes)
+    
     certificates << certificate
     certificates.sync
+    
     [keypair, certificate]
   end
   
@@ -41,14 +45,10 @@ class CertificateDepot
   end
   
   def self.create_directories(path)
-    [
-      private_path(path),
-      certificates_path(path),
-      crl_path(path)
-    ].each do |directory|
-      FileUtils.mkdir_p(directory)
-    end
-    FileUtils.chmod(0700, path)
+    FileUtils.mkdir_p(certificates_path(path))
+    FileUtils.mkdir_p(private_path(path))
+    FileUtils.chmod(0700, private_path(path))
+    FileUtils.chmod(0755, path)
   end
   
   def self.create_configuration(path, label)
@@ -62,27 +62,29 @@ path            = #{path}
     end
   end
   
-  def self.create_ca_certificate(path, label)
+  def self.create_ca_certificate(path, label, options={})
     keypair = CertificateDepot::Keypair.generate
     keypair.write_to(key_path(path))
     
-    certificate = CertificateDepot::Certificate.generate(
-      :public_key => keypair.public_key,
-      :organization => label
-    )
+    attributes = options
+    attributes[:public_key]   = keypair.public_key
+    attributes[:private_key]  = keypair.private_key
+    attributes[:organization] = label
+    certificate = CertificateDepot::Certificate.generate(attributes)
+    
     certificate.write_to(certificate_path(path))
   end
   
-  def self.create(path, label)
+  def self.create(path, label, options={})
     create_directories(path)
     create_configuration(path, label)
-    create_ca_certificate(path, label)
+    create_ca_certificate(path, label, options)
     new(path)
   end
   
-  def self.generate_client_keypair_and_certificate(path, email)
+  def self.generate_client_keypair_and_certificate(path, email, options={})
     depot = new(path)
-    depot.generate_client_keypair_and_certificate(email)
+    depot.generate_client_keypair_and_certificate(email, options)
   end
   
   def self.configuration_example(path)

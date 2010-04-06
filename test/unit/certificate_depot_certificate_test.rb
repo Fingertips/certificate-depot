@@ -5,7 +5,8 @@ describe "CertificateDepot::Certificate" do
     @ca_keypair     = CertificateDepot::Keypair.generate
     @ca_certificate = CertificateDepot::Certificate.generate(
       :organization => 'Certificate Depot Test',
-      :public_key => @ca_keypair.public_key
+      :public_key => @ca_keypair.public_key,
+      :private_key => @ca_keypair.private_key
     )
   end
   
@@ -22,6 +23,7 @@ describe "CertificateDepot::Certificate" do
       :ca_certificate => @ca_certificate,
       :email_address => 'manfred@example.com',
       :public_key => keypair.public_key,
+      :private_key => @ca_keypair.private_key,
       :serial_number => 4
     )
     certificate.public_key.to_s.should == keypair.public_key.to_s
@@ -29,6 +31,19 @@ describe "CertificateDepot::Certificate" do
     certificate.email_address.should == 'manfred@example.com'
     certificate.issuer.to_s.should == @ca_certificate.subject.to_s
     certificate.serial_number.should == 4
+  end
+  
+  it "generates a new client certificate with optional attributes" do
+    keypair     = CertificateDepot::Keypair.generate
+    certificate = CertificateDepot::Certificate.generate(
+      :ca_certificate => @ca_certificate,
+      :email_address => 'manfred@example.com',
+      :public_key => keypair.public_key,
+      :private_key => @ca_keypair.private_key,
+      :serial_number => 4,
+      :common_name => 'example.com'
+    )
+    certificate.common_name.should == 'example.com'
   end
   
   it "loads from file" do

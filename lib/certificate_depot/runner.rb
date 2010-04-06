@@ -16,6 +16,8 @@ class CertificateDepot
         opts.separator "    init <path> [name]        Create a new depot on disk. You probably want"
         opts.separator "                              to run init as root to make sure your keys"
         opts.separator "                              will be safe."
+        opts.separator "         --cn <common_name>   Sets the CN in the certificate so you can use"
+        opts.separator "                              it as an SSL server certificate too."
         opts.separator ""
         opts.separator "    generate <path> <email>   Create a new client certificate. Writes a pem"
         opts.separator "                              with a private key and a certificate to"
@@ -25,6 +27,9 @@ class CertificateDepot
         opts.separator "                              the depot."
         opts.separator ""
         opts.separator "Options:"
+        opts.on("-c", "--cn [COMMON_NAME]", "Set the common name to use in the generated certificate") do |common_name|
+          @options[:common_name] = common_name
+        end
         opts.on("-h", "--help", "Show help") do
           puts opts
           exit
@@ -41,13 +46,13 @@ class CertificateDepot
         else
           label = path.split('/').last
         end
-        CertificateDepot.create(path, label)
+        CertificateDepot.create(path, label, @options)
       when :generate
         if argv.length >= 2
           path  = File.expand_path(argv[0])
           email = argv[1]
           
-          keypair, certificate = CertificateDepot.generate_client_keypair_and_certificate(path, email)
+          keypair, certificate = CertificateDepot.generate_client_keypair_and_certificate(path, email, @options)
           puts keypair.private_key.to_s
           puts certificate.certificate.to_s
         else
