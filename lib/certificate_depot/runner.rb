@@ -21,6 +21,9 @@ class CertificateDepot
         opts.separator "                              with a private key and a certificate to"
         opts.separator "                              standard output"
         opts.separator ""
+        opts.separator "    config <path>             Shows a configuration example for Apache for"
+        opts.separator "                              the depot."
+        opts.separator ""
         opts.separator "Options:"
         opts.on("-h", "--help", "Show help") do
           puts opts
@@ -47,6 +50,13 @@ class CertificateDepot
           keypair, certificate = CertificateDepot.generate_client_keypair_and_certificate(path, email)
           puts keypair.private_key.to_s
           puts certificate.certificate.to_s
+        else
+          puts parser.to_s
+        end
+      when :config
+        if argv.length >= 1
+          path = File.expand_path(argv[0])
+          puts CertificateDepot.configuration_example(path)
         else
           puts parser.to_s
         end

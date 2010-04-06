@@ -23,8 +23,24 @@ describe "CertificateDepot::Runner, concerning the commandline utility" do
     pem.should.include("CERTIFICATE")
   end
   
-  it "shows help text when path or email weren't supplied then generating a new certificate" do
+  it "shows help text when path or email weren't supplied when generating a new certificate" do
     runner = runner(['generate'])
+    capture_stdout do
+      runner.run
+    end.should == runner.parser.to_s
+  end
+  
+  it "show a configuration example for Apache" do
+    path = File.join(temporary_directory, 'my-depot')
+    runner(['init', path, 'Certificate', 'Depot', 'Test']).run
+    example = capture_stdout do
+      runner(['config', path]).run
+    end
+    example.should.include(File.join(path, 'certificates', 'ca.crt'))
+  end
+  
+  it "show help text when path weren't supplied when requesting a configuration example" do
+    runner = runner(['config'])
     capture_stdout do
       runner.run
     end.should == runner.parser.to_s
