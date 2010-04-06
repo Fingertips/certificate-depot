@@ -1,5 +1,9 @@
 #!/usr/bin/env ruby
 
-$:.unshift(File.expand_path('../../lib', __FILE__))
+# When it's invoked directly and not from Rubygems
+if $0 == __FILE__ 
+  $:.unshift(File.expand_path('../../lib', __FILE__))
+end
+
 require 'certificate_depot'
 CertificateDepot.run(ARGV)
