@@ -13,7 +13,8 @@ $:.unshift(File.expand_path('../test_helper', __FILE__))
 require 'temporary_directory'
 require 'capture_output'
 
-class Test::Unit::TestCase
+
+module Test::Spec::TestCase::InstanceMethods
   include TestHelper::TemporaryDirectory
   include TestHelper::CaptureOutput
 end

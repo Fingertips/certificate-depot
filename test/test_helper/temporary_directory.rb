@@ -15,7 +15,6 @@ module TestHelper
     end
     
     def setup
-      super
       teardown_temporary_directory
       setup_temporary_directory
     end

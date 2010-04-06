@@ -18,6 +18,7 @@ class CertificateDepot
     
     def write_to(path)
       File.open(path, 'w') { |file| file.write(@private_key.to_pem) }
+      File.chmod(0400, path)
     end
     
     def self.generate

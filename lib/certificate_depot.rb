@@ -2,8 +2,9 @@ require 'openssl'
 require 'fileutils'
 
 class CertificateDepot
-  autoload :Keypair, 'certificate_depot/keypair'
-  autoload :Runner,  'certificate_depot/runner'
+  autoload :Certificate, 'certificate_depot/certificate'
+  autoload :Keypair,     'certificate_depot/keypair'
+  autoload :Runner,      'certificate_depot/runner'
   
   def initialize(path)
     @config = OpenSSL::Config.load(self.class.openssl_config_path(path))
@@ -45,10 +46,11 @@ dir            = #{path}")
   end
   
   def self.create_ca_certificate(path)
-     # openssl req -config openssl.my.cnf -new -x509 -extensions v3_ca -keyout private/myca.key -out certs/myca.crt -days 1825
      keypair = CertificateDepot::Keypair.generate
      keypair.write_to(key_path(path))
-     keypair
+     
+     certificate = CertificateDepot::Certificate.generate(keypair.public_key)
+     certificate.write_to(certificate_path(path))
   end
   
   def self.create(path, label)
@@ -87,10 +89,10 @@ dir            = #{path}")
   end
   
   def self.key_path(path)
-    File.join(path, 'private', 'ca.key')
+    File.join(private_path(path), 'ca.key')
   end
   
   def self.certificate_path(path)
-    File.join(path, 'certs', 'ca.crt')
+    File.join(certificates_path(path), 'ca.crt')
   end
 end

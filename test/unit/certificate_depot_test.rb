@@ -17,6 +17,7 @@ describe "CertificateDepot" do
     
     # Creates a key and self-signed certificate
     File.size(File.join(temporary_directory, 'private/ca.key')).should > 0
+    File.size(File.join(temporary_directory, 'certificates/ca.crt')).should > 0
   end
 end
 
