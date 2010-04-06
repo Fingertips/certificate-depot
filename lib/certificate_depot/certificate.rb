@@ -3,6 +3,11 @@ class CertificateDepot
     DEFAULT_VALIDITY_PERIOD = 3600 * 24 * 365 * 10
     X509v3 = 2
     
+    ATTRIBUTE_MAP = {
+      :organization  => 'O',
+      :email_address => 'emailAddress'
+    }
+    
     attr_accessor :certificate
     
     def initialize(certificate=nil)
@@ -14,15 +19,24 @@ class CertificateDepot
       to           = Time.now + DEFAULT_VALIDITY_PERIOD
       
       name         =  OpenSSL::X509::Name.new
-      name.add_entry('O', attributes[:organization])
+      ATTRIBUTE_MAP.each do |internal, x509_attribute|
+        name.add_entry(x509_attribute, attributes[internal]) if attributes[internal]
+      end
+      
+      if attributes[:ca_certificate]
+        issuer = attributes[:ca_certificate].subject
+      else
+        issuer = name
+      end
       
       @certificate = OpenSSL::X509::Certificate.new
       @certificate.subject    = name
-      @certificate.issuer     = name
+      @certificate.issuer     = issuer
       @certificate.not_before = from
       @certificate.not_after  = to
       @certificate.version    = X509v3
       @certificate.public_key = attributes[:public_key]
+      @certificate
     end
     
     def write_to(path)
@@ -38,14 +52,22 @@ class CertificateDepot
       @certificate.issuer
     end
     
-    def organization
-      self['O']
+    def subject
+      @certificate.subject
+    end
+    
+    def method_missing(method, *attributes, &block)
+      if x509_attribute = ATTRIBUTE_MAP[method.to_sym]
+        self[x509_attribute]
+      else
+        super
+      end
     end
     
     def [](key)
-      @certificate.issuer.to_a.each do |name, value, type|
+      @certificate.subject.to_a.each do |name, value, type|
         return value if name == key
-      end
+      end; nil
     end
     
     def self.generate(public_key)
