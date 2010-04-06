@@ -80,6 +80,11 @@ path            = #{path}
     new(path)
   end
   
+  def self.generate_client_keypair_and_certificate(path, email)
+    depot = new(path)
+    depot.generate_client_keypair_and_certificate(email)
+  end
+  
   def self.run(argv)
     runner = ::CertificateDepot::Runner.new(argv)
     runner.run

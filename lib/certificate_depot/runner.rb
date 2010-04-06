@@ -9,12 +9,17 @@ class CertificateDepot
     
     def parser
       @parser ||= OptionParser.new do |opts|
+        #               ---------------------------------------------------------------------------
         opts.banner =  "Usage: depot [command] [options]"
         opts.separator ""
         opts.separator "Commands:"
-        opts.separator "    init <path> [name]     - Create a new depot on disk"
-        opts.separator "          You probably want to run init as root to make"
-        opts.separator "          sure your keys will be safe."
+        opts.separator "    init <path> [name]        Create a new depot on disk. You probably want"
+        opts.separator "                              to run init as root to make sure your keys"
+        opts.separator "                              will be safe."
+        opts.separator ""
+        opts.separator "    generate <path> <email>   Create a new client certificate. Writes a pem"
+        opts.separator "                              with a private key and a certificate to"
+        opts.separator "                              standard output"
         opts.separator ""
         opts.separator "Options:"
         opts.on("-h", "--help", "Show help") do
@@ -34,6 +39,17 @@ class CertificateDepot
           label = path.split('/').last
         end
         CertificateDepot.create(path, label)
+      when :generate
+        if argv.length >= 2
+          path  = File.expand_path(argv[0])
+          email = argv[1]
+          
+          keypair, certificate = CertificateDepot.generate_client_keypair_and_certificate(path, email)
+          puts keypair.private_key.to_s
+          puts certificate.certificate.to_s
+        else
+          puts parser.to_s
+        end
       else
         puts parser.to_s
       end

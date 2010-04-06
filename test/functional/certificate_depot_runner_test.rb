@@ -13,6 +13,23 @@ describe "CertificateDepot::Runner, concerning the commandline utility" do
     CertificateDepot.new(path).label.should == 'Certificate Depot Test'
   end
   
+  it "generates a new key and certificate and writes it to stdout" do
+    path = File.join(temporary_directory, 'my-depot')
+    runner(['init', path, 'Certificate', 'Depot', 'Test']).run
+    pem = capture_stdout do
+      runner(['generate', path, 'manfred@example.com']).run
+    end
+    pem.should.include("RSA PRIVATE KEY")
+    pem.should.include("CERTIFICATE")
+  end
+  
+  it "shows help text when path or email weren't supplied then generating a new certificate" do
+    runner = runner(['generate'])
+    capture_stdout do
+      runner.run
+    end.should == runner.parser.to_s
+  end
+  
   private
   
   def runner(argv)
