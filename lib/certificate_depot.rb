@@ -5,6 +5,7 @@ class CertificateDepot
   autoload :Certificate, 'certificate_depot/certificate'
   autoload :Keypair,     'certificate_depot/keypair'
   autoload :Runner,      'certificate_depot/runner'
+  autoload :Store,       'certificate_depot/store'
   
   def initialize(path)
     @config = OpenSSL::Config.load(self.class.openssl_config_path(path))
@@ -27,9 +28,15 @@ class CertificateDepot
     certificate = CertificateDepot::Certificate.generate(
       :ca_certificate => ca_certificate,
       :email_address => email_address,
-      :public_key => keypair.public_key
+      :public_key => keypair.public_key,
+      :serial_number => certificates.next_serial_number
     )
+    certificates << certificate
     [keypair, certificate]
+  end
+  
+  def certificates
+    @certificates ||= CertificateDepot::Store.new(self.class.certificates_path(path))
   end
   
   def self.create_directories(path)

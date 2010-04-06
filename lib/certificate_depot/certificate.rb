@@ -25,9 +25,13 @@ class CertificateDepot
       
       if attributes[:ca_certificate]
         issuer = attributes[:ca_certificate].subject
+        serial = attributes[:serial_number]
       else
         issuer = name
+        serial = 0
       end
+      
+      raise ArgumentError, "Please supply a serial number for the certificate to generate" unless serial
       
       @certificate = OpenSSL::X509::Certificate.new
       @certificate.subject    = name
@@ -36,6 +40,7 @@ class CertificateDepot
       @certificate.not_after  = to
       @certificate.version    = X509v3
       @certificate.public_key = attributes[:public_key]
+      @certificate.serial     = serial
       @certificate
     end
     
@@ -54,6 +59,10 @@ class CertificateDepot
     
     def subject
       @certificate.subject
+    end
+    
+    def serial_number
+      @certificate.serial
     end
     
     def method_missing(method, *attributes, &block)

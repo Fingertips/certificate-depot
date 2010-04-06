@@ -13,6 +13,7 @@ describe "CertificateDepot::Certificate" do
     @ca_certificate.public_key.to_s.should == @ca_keypair.public_key.to_s
     @ca_certificate['O'].should == 'Certificate Depot Test'
     @ca_certificate.organization.should == 'Certificate Depot Test'
+    @ca_certificate.serial_number.should == 0
   end
   
   it "generates a new client certificate" do
@@ -20,13 +21,14 @@ describe "CertificateDepot::Certificate" do
     certificate = CertificateDepot::Certificate.generate(
       :ca_certificate => @ca_certificate,
       :email_address => 'manfred@example.com',
-      :public_key => keypair.public_key
+      :public_key => keypair.public_key,
+      :serial_number => 4
     )
     certificate.public_key.to_s.should == keypair.public_key.to_s
     certificate['emailAddress'].should == 'manfred@example.com'
     certificate.email_address.should == 'manfred@example.com'
-    
     certificate.issuer.to_s.should == @ca_certificate.subject.to_s
+    certificate.serial_number.should == 4
   end
   
   it "loads from file" do
