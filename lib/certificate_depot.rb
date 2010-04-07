@@ -94,10 +94,7 @@ path            = #{path}
   def self.configuration_example(path)
     "SSLEngine on
 SSLOptions +StdEnvVars
-
-SSLCertificateFile      \"/etc/apache/ssl/certificates/example.com.crt\"
-SSLCertificateKeyFile   \"/etc/apache/ssl/private/example.com.key\"
-
+SSLCertificateFile      \"/etc/apache/ssl/certificates/example.com.pem\"
 SSLVerifyClient require
 SSLCACertificateFile    \"#{certificate_path(path)}\""
   end
