@@ -29,11 +29,20 @@ describe "A CertificateDepot" do
   end
   
   it "generates a new client keypair and certificate" do
-    keypair, certificate = @depot.generate_client_keypair_and_certificate('manfred@example.com')
+    keypair, certificate = @depot.generate_keypair_and_certificate(:type => :client, :email_address => 'manfred@example.com')
     keypair.public_key.should.be.public
     keypair.private_key.should.be.private
     
     certificate.email_address.should == 'manfred@example.com'
+    certificate.issuer.to_s.should == @depot.ca_certificate.subject.to_s
+  end
+  
+  it "generates a new server keypair and certificate" do
+    keypair, certificate = @depot.generate_keypair_and_certificate(:type => :server, :common_name => '*.example.com')
+    keypair.public_key.should.be.public
+    keypair.private_key.should.be.private
+    
+    certificate.common_name.should == '*.example.com'
     certificate.issuer.to_s.should == @depot.ca_certificate.subject.to_s
   end
 end

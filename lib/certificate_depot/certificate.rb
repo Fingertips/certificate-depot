@@ -4,9 +4,17 @@ class CertificateDepot
     X509v3 = 2
     
     ATTRIBUTE_MAP = {
-      :organization  => 'O',
-      :email_address => 'emailAddress',
-      :common_name   => 'CN'
+      :common_name              => 'CN',
+      :locality_name            => 'L',
+      :state_or_province_name   => 'ST',
+      :organization             => 'O',
+      :organizational_unit_name => 'OU',
+      :country_name             => 'C',
+      :street_address           => 'STREET',
+      :domain_component         => 'DC',
+      :user_id                  => 'UID',
+      :poedels                  => 'POEDELS',
+      :email_address            => 'emailAddress'
     }
     
     attr_accessor :certificate
@@ -24,12 +32,15 @@ class CertificateDepot
         name.add_entry(x509_attribute, attributes[internal]) if attributes[internal]
       end
       
-      if attributes[:ca_certificate]
+      case attributes[:type]
+      when :client, :server
         issuer = attributes[:ca_certificate].subject
         serial = attributes[:serial_number]
-      else
+      when :ca
         issuer = name
         serial = 0
+      else
+        raise ArgumentError, "Unknown certificate type #{attributes[:type]}, please specify either :client, :server, or :ca"
       end
       
       raise ArgumentError, "Please supply a serial number for the certificate to generate" unless serial
@@ -47,12 +58,18 @@ class CertificateDepot
       factory = OpenSSL::X509::ExtensionFactory.new
       factory.subject_certificate = @certificate
       
-      if attributes[:ca_certificate] # Client certificate
+      case attributes[:type]
+      when :server
+        factory.issuer_certificate = attributes[:ca_certificate].certificate
+        extensions << factory.create_extension('basicConstraints', 'CA:FALSE', true)
+        extensions << factory.create_extension('keyUsage', 'digitalSignature,keyEncipherment')
+        extensions << factory.create_extension('extendedKeyUsage', 'serverAuth,clientAuth,emailProtection')
+      when :client
         factory.issuer_certificate = attributes[:ca_certificate].certificate
         extensions << factory.create_extension('basicConstraints', 'CA:FALSE', true)
         extensions << factory.create_extension('keyUsage', 'nonRepudiation,digitalSignature,keyEncipherment')
         extensions << factory.create_extension('extendedKeyUsage', 'clientAuth')
-      else # CA certificate
+      when :ca
         factory.issuer_certificate = @certificate
         extensions << factory.create_extension('basicConstraints', 'CA:TRUE', true)
         extensions << factory.create_extension('keyUsage', 'cRLSign,keyCertSign')

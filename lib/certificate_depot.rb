@@ -23,14 +23,17 @@ class CertificateDepot
     @ca_certificate ||= CertificateDepot::Certificate.from_file(self.class.certificate_path(path))
   end
   
-  def generate_client_keypair_and_certificate(email_address, options={})
+  def ca_private_key
+    @ca_private_key ||= OpenSSL::PKey::RSA.new(File.read(self.class.key_path(path)))
+  end
+  
+  def generate_keypair_and_certificate(options={})
     keypair     = CertificateDepot::Keypair.generate
     
     attributes = options
     attributes[:ca_certificate] = ca_certificate
-    attributes[:email_address]  = email_address
     attributes[:public_key]     = keypair.public_key
-    attributes[:private_key]    = OpenSSL::PKey::RSA.new(File.read(self.class.key_path(path)))
+    attributes[:private_key]    = ca_private_key
     attributes[:serial_number]  = certificates.next_serial_number
     certificate = CertificateDepot::Certificate.generate(attributes)
     
@@ -62,37 +65,38 @@ path            = #{path}
     end
   end
   
-  def self.create_ca_certificate(path, label, options={})
+  def self.create_ca_certificate(path, label)
     keypair = CertificateDepot::Keypair.generate
     keypair.write_to(key_path(path))
     
-    attributes = options
+    attributes = {}
+    attributes[:type]         = :ca
     attributes[:public_key]   = keypair.public_key
     attributes[:private_key]  = keypair.private_key
     attributes[:organization] = label
     certificate = CertificateDepot::Certificate.generate(attributes)
-    
     certificate.write_to(certificate_path(path))
   end
   
   def self.create(path, label, options={})
+    attributes = options
     create_directories(path)
     create_configuration(path, label)
-    create_ca_certificate(path, label, options)
+    create_ca_certificate(path, label)
     new(path)
   end
   
-  def self.generate_client_keypair_and_certificate(path, email, options={})
+  def self.generate_keypair_and_certificate(path, options={})
     depot = new(path)
-    depot.generate_client_keypair_and_certificate(email, options)
+    depot.generate_keypair_and_certificate(options)
   end
   
   def self.configuration_example(path)
     "SSLEngine on
 SSLOptions +StdEnvVars
 
-SSLCertificateFile      \"#{certificate_path(path)}\"
-SSLCertificateKeyFile   \"#{key_path(path)}\"
+SSLCertificateFile      \"/etc/apache/ssl/certificates/example.com.crt\"
+SSLCertificateKeyFile   \"/etc/apache/ssl/private/example.com.key\"
 
 SSLVerifyClient require
 SSLCACertificateFile    \"#{certificate_path(path)}\""

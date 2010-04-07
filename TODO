@@ -1,2 +1,3 @@
 * Validate input
   - Email address when creating a certificate
+  - Common name for server certificate

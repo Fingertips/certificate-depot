@@ -20,7 +20,7 @@ describe "CertificateDepot::Store, with certificates" do
     @addresses = %w(manfred@example.com eloy@example.com thijs@example.com)
     @depot     = CertificateDepot.create(temporary_directory, 'Certificate Depot Test')
     @addresses.each do |address|
-      @depot.generate_client_keypair_and_certificate(address)
+      @depot.generate_keypair_and_certificate(:type => :client, :email_address => address)
     end
     @store = @depot.certificates
   end
