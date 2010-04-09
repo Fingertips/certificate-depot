@@ -55,6 +55,11 @@ describe "CertificateDepot::Runner, concerning working on an existing depot with
     end.should == "[!] Please specify the path to the depot you want to operate on\n    $ depot config /path/to/depot\n"
   end
   
+  it "starts a new server" do
+    CertificateDepot.expects(:listen)
+    runner(['start', @path]).run
+  end
+  
   private
   
   def runner(argv)

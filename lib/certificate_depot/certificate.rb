@@ -27,7 +27,7 @@ class CertificateDepot
       from         = Time.now
       to           = Time.now + DEFAULT_VALIDITY_PERIOD
       
-      name         =  OpenSSL::X509::Name.new
+      name         =  attributes[:subject] || OpenSSL::X509::Name.new
       ATTRIBUTE_MAP.each do |internal, x509_attribute|
         name.add_entry(x509_attribute, attributes[internal]) if attributes[internal]
       end

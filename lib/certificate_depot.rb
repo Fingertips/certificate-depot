@@ -5,7 +5,9 @@ class CertificateDepot
   autoload :Certificate, 'certificate_depot/certificate'
   autoload :Keypair,     'certificate_depot/keypair'
   autoload :Runner,      'certificate_depot/runner'
+  autoload :Server,      'certificate_depot/server'
   autoload :Store,       'certificate_depot/store'
+  autoload :Worker,      'certificate_depot/worker'
   
   def initialize(path)
     @config = OpenSSL::Config.load(self.class.openssl_config_path(path))
@@ -97,6 +99,10 @@ SSLOptions +StdEnvVars
 SSLCertificateFile      \"/etc/apache/ssl/certificates/example.com.pem\"
 SSLVerifyClient require
 SSLCACertificateFile    \"#{certificate_path(path)}\""
+  end
+  
+  def self.listen(path, options={})
+    CertificateDepot::Server.listen(new(path), options)
   end
   
   def self.run(argv)

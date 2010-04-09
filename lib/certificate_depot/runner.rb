@@ -25,6 +25,7 @@ class CertificateDepot
         opts.separator "    config <path>             Shows a configuration example for Apache for"
         opts.separator "                              the depot."
         opts.separator ""
+        opts.separator "    start <path>              Start a server."
         opts.separator "Options:"
         opts.on("-c", "--cn [COMMON_NAME]", "Set the common name to use in the generated certificate") do |common_name|
           @options[:common_name] = common_name
@@ -37,6 +38,18 @@ class CertificateDepot
         end
         opts.on("-t", "--type [TYPE]", "Generate a certificate of a certain type (server|client)") do |type|
           @options[:type] = type.intern
+        end
+        opts.on("-H", "--host [HOST]", "IP address or hostname to listen on (127.0.0.1)") do |host|
+          @options[:host] = host
+        end
+        opts.on("-P", "--port [PORT]", "The port to listen on (35553)") do |port|
+          @options[:port] = port.to_i
+        end
+        opts.on("-n", "--process-count", "The number of worker processes to spawn (2)") do |process_count|
+          @options[:process_count] = process_count.to_i
+        end
+        opts.on("-q", "--max-connection-queue", "The number of requests to queue on the server (10)") do |max_connection_queue|
+          @options[:max_connection_queue] = max_connection_queue.to_i
         end
         opts.on("-h", "--help", "Show help") do
           puts opts
@@ -68,6 +81,8 @@ class CertificateDepot
           end
         when :config
           puts CertificateDepot.configuration_example(path)
+        when :start
+          CertificateDepot.listen(path, @options)
         else
           puts parser.to_s
         end

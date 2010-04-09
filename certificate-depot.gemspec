@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{certificate-depot}
-  s.version = "0.1.0"
+  s.version = "0.2.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Manfred Stienstra"]
-  s.date = %q{2010-04-06}
+  s.date = %q{2010-04-09}
   s.default_executable = %q{depot}
   s.description = %q{Certificate depot is a mini Certification Authority for TLS client certificates.}
   s.email = %q{manfred@fngtps.com}
@@ -24,7 +24,9 @@ Gem::Specification.new do |s|
      "lib/certificate_depot/certificate.rb",
      "lib/certificate_depot/keypair.rb",
      "lib/certificate_depot/runner.rb",
-     "lib/certificate_depot/store.rb"
+     "lib/certificate_depot/server.rb",
+     "lib/certificate_depot/store.rb",
+     "lib/certificate_depot/worker.rb"
   ]
   s.rdoc_options = ["--charset=UTF-8"]
   s.require_paths = ["lib"]
