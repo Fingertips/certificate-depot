@@ -1,9 +1,9 @@
 class CertificateDepot
   class Worker
-    attr_accessor :server
+    attr_accessor :server, :lifeline
     
     def initialize(server)
-      @server = server
+      @server   = server
     end
     
     def run_command(socket, *args)
@@ -24,15 +24,30 @@ class CertificateDepot
       end
     end
     
-    def accept
-      socket, address = @server.socket.accept
+    def process_incoming_socket(socket, address)
       run_command(socket, *self.class.parse_command(socket.gets))
       socket.close
     end
     
-    def self.spawn(server)
-      worker = new(server)
-      loop { worker.accept }
+    def run
+      loop do
+        # IO.select returns a triplet of lists with IO object that need attention or
+        # nil on timeout of 2 seconds.
+        if needy = IO.select([server.socket], nil, [lifeline], 2)
+          # The first of the triplet are server sockets
+          if incoming = needy.first
+            incoming.each do |socket|
+              begin
+                process_incoming_socket(*socket.accept_nonblock)
+              rescue Errno::EAGAIN, Errno::ECONNABORTED
+              end
+            end
+          # The last of the triplet are lifelines
+          elsif lifelines = needy.last
+            exit 1
+          end
+        end
+      end
     end
     
     def self.parse_command(command)
