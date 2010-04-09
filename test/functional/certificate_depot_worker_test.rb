@@ -8,7 +8,7 @@ describe "CertificateDepot::Worker" do
     @worker = CertificateDepot::Worker.new(@server)
   end
   
-  it "generates certificates" do
+  xit "generates certificates" do
     subject = '/UID=recorder-5'
     
     collector = send_command("generate #{subject}")
@@ -22,7 +22,7 @@ describe "CertificateDepot::Worker" do
     key.should.be.private
   end
   
-  it "shuts down" do
+  xit "shuts down" do
     @worker.expects(:exit).with(1)
     send_command("shutdown")
   end
