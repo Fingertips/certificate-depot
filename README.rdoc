@@ -1,10 +1,70 @@
 = Certificate Depot
 
-Lightweight library to manage server and client certificates used to TLS. It's basically a mini certification authority.
+Certificate Depot is a mini certification authority; it allows you to create and manage TLS certificates. Depot has three parts: a library, a command-line utility, and a server.
 
 == Getting started
 
-If you want to use the CA (Certificate Authority) functionality you need to setup a directory with some configuration and database files.
+If you want to use the CA (Certificate Authority) functionality you need to setup a directory with some configuration and database files. The last argument is the name of the CA, it will appear on the certificates as the organization handing out the certificates.
 
   $ depot init /tmp/example-ca Example Certificate Authority
 
+== Accessing a depot
+
+There are three ways to access a depot. From code, from the command-line or through a socket connection to the server.
+
+=== Accessing a depot from code
+
+Basic operations are accessible through the classmethods on CertificateDepot.
+
+  keypair, certificate = CertificateDepot.generate_keypair_and_certificate('/tmp/example-ca', {
+    :type          => :client,
+    :common_name   => 'Bob Owner',
+    :email_address => 'bob@example.com',
+    :user_id       => '12'
+  })
+
+Other operations can be accessed by instantiating a depot.
+
+  depot = CertificateDepot.new('/tmp/example-ca')
+  depot.label #=> 'Example Certificate Authority'
+
+For the rest you probably want to consult the API documentation.
+
+=== Accessing a depot from the command-line
+
+Using the <tt>--help</tt> option you can get a pretty good description of what the command-line utility does. Let's look at one of the commands.
+
+  $ depot generate /tmp/example-ca --cn 'Bob Owner' --email 'bob@example.com' --uid '12' > bob_owner.pem
+
+=== Accesing a depot through a socket
+
+First we have to start a server. Note that for simplicity the server doesn't have any security features and it's even possible to shutdown the server when you have access to it.
+
+  $ depot start /tmp/example-ca
+
+After this you can get documentation by connecting to the server. The <tt>help</tt> command list all available command and <tt>help [command]</tt> will tell you more about the command.
+
+  $ awk% telnet 127.0.0.1 35553
+  Trying 127.0.0.1...
+  Connected to airy.local.
+  Escape character is '^]'.
+  help
+  generate shutdown
+  Connection closed by foreign host.
+  
+  $ awk% telnet 127.0.0.1 35553
+  Trying 127.0.0.1...
+  Connected to airy.local.
+  Escape character is '^]'.
+  help generate
+  GENERATE
+    generate <distinguished name>
+  RETURNS
+    A private key and certificate in PEM format.
+  EXAMPLE
+    generate /UID=12/CN=Bob Owner,emailAddress=bob@example.com
+  Connection closed by foreign host.
+
+When you're done you can stop the server with the command-line utility or by issuing the <tt>shutdown</tt> command.
+
+  $ depot stop

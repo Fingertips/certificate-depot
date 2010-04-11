@@ -1,4 +1,5 @@
 require 'rake/testtask'
+require 'rake/rdoctask'
 
 desc "Run all tests by default"
 task :default => :test
@@ -7,6 +8,14 @@ desc "Run all test"
 Rake::TestTask.new do |t|
   t.test_files = FileList['test/**/*_test.rb']
   t.verbose = true
+end
+
+namespace :documentation do
+  Rake::RDocTask.new(:generate) do |rd|
+    rd.main = "README.rdoc"
+    rd.rdoc_files.include("README.rdoc", "lib/**/*.rb")
+    rd.options << "--all" << "--charset" << "utf-8"
+  end
 end
 
 begin
