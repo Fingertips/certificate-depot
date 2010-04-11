@@ -130,7 +130,7 @@ class CertificateDepot
       # Read everything coming in on the lifelines and discard it because
       # the contents doesn't matter.
       needy.flatten.each do |lifeline|
-        loop { lifeline.read_nonblock(READ_BUFFER_SIZE) } unless pipe.closed?
+        loop { lifeline.read_nonblock(READ_BUFFER_SIZE) } unless lifeline.closed?
       end if needy
     rescue EOFError, Errno::EAGAIN, Errno::EINTR
     end
