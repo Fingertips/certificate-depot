@@ -56,15 +56,23 @@ describe "CertificateDepot::Runner, concerning working on an existing depot with
   end
   
   it "starts a new server" do
-    CertificateDepot.expects(:listen)
+    CertificateDepot.expects(:start)
     runner(['start', @path]).run
   end
   
   it "stops a running server" do
-    CertificateDepot.expects(:shutdown)
-    runner(['stop']).run
+    CertificateDepot.expects(:stop).returns(true)
+    capture_stdout do
+      runner(['stop']).run
+    end.should == "[!] Stopping server\n"
   end
   
+  it "stops nothing when there is no running server" do
+    CertificateDepot.expects(:stop).returns(false)
+    capture_stdout do
+      runner(['stop']).run
+    end.should == "[!] Can't find a running server\n"
+  end
   
   private
   
