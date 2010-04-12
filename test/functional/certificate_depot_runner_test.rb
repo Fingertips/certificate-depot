@@ -52,13 +52,19 @@ describe "CertificateDepot::Runner, concerning working on an existing depot with
     runner = runner(['config'])
     capture_stdout do
       runner.run
-    end.should == "[!] Please specify the path to the depot you want to operate on\n    $ depot config /path/to/depot\n"
+    end.should == "[!] Please specify the path to the depot you want to operate on\n"
   end
   
   it "starts a new server" do
     CertificateDepot.expects(:listen)
     runner(['start', @path]).run
   end
+  
+  it "stops a running server" do
+    CertificateDepot.expects(:shutdown)
+    runner(['stop']).run
+  end
+  
   
   private
   

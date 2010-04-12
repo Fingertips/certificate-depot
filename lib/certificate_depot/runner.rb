@@ -26,6 +26,9 @@ class CertificateDepot
         opts.separator "                              the depot."
         opts.separator ""
         opts.separator "    start <path>              Start a server."
+        opts.separator ""
+        opts.separator "    stop                      Stop a running server."
+        opts.separator ""
         opts.separator "Options:"
         opts.on("-c", "--cn [COMMON_NAME]", "Set the common name to use in the generated certificate") do |common_name|
           @options[:common_name] = common_name
@@ -58,34 +61,45 @@ class CertificateDepot
       end
     end
     
-    def run_command(command, argv)
+    def no_path(argv)
       if argv.length == 0
-        puts "[!] Please specify the path to the depot you want to operate on\n    $ depot #{command} /path/to/depot"
+        puts "[!] Please specify the path to the depot you want to operate on"
+        true
       else
-        path = File.expand_path(argv[0])
-        case command
-        when :init
-          if argv[1]
-            label = argv[1..-1].join(' ')
-          else
-            label = path.split('/').last
-          end
-          CertificateDepot.create(path, label, @options)
-        when :generate
-          unless [:server, :client].include?(@options[:type])
-            puts "[!] Unknown certificate type `#{@options[:type]}', please specify either server or client with the --type option"
-          else
-            keypair, certificate = CertificateDepot.generate_keypair_and_certificate(path, @options)
-            puts keypair.private_key.to_s
-            puts certificate.certificate.to_s
-          end
-        when :config
-          puts CertificateDepot.configuration_example(path)
-        when :start
-          CertificateDepot.listen(path, @options)
+        false
+      end
+    end
+    
+    def run_command(command, argv)
+      path = File.expand_path(argv[0].to_s)
+      case command
+      when :init
+        return if no_path(argv)
+        if argv[1]
+          label = argv[1..-1].join(' ')
         else
-          puts parser.to_s
+          label = path.split('/').last
         end
+        CertificateDepot.create(path, label, @options)
+      when :generate
+        return if no_path(argv)
+        unless [:server, :client].include?(@options[:type])
+          puts "[!] Unknown certificate type `#{@options[:type]}', please specify either server or client with the --type option"
+        else
+          keypair, certificate = CertificateDepot.generate_keypair_and_certificate(path, @options)
+          puts keypair.private_key.to_s
+          puts certificate.certificate.to_s
+        end
+      when :config
+        return if no_path(argv)
+        puts CertificateDepot.configuration_example(path)
+      when :start
+        return if no_path(argv)
+        CertificateDepot.listen(path, @options)
+      when :stop
+        CertificateDepot.shutdown
+      else
+        puts parser.to_s
       end
     end
     
