@@ -97,6 +97,10 @@ class CertificateDepot
       trap_signals
       setup_socket
       save_pid_to_file(fork do
+        # Generate a new process group so we're no longer a child process
+        # of the TTY.
+        Process.setsid
+        reroute_stdio
         loop do
           break if signals_want_shutdown?
           reap_workers
@@ -116,6 +120,12 @@ class CertificateDepot
     # Returns true when the signals received by the process demand a shutdown
     def signals_want_shutdown?
       !@signals.empty?
+    end
+    
+    # Make all output of interpreter go to the logfile
+    def reroute_stdio
+      $stdout = log.file
+      $stderr = log.file
     end
     
     # Write the PID of the process with the mainloop to the filesystem so we
@@ -152,7 +162,7 @@ class CertificateDepot
         begin
           File.unlink(pid_file)
           log.debug("Removed PID file `#{pid_file}'")
-        rescue Errno::EACCES
+        rescue Errno::EACCES, Errno::ENOENT
         end
       end
     end

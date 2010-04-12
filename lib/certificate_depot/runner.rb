@@ -54,6 +54,12 @@ class CertificateDepot
         opts.on("-q", "--max-connection-queue", "The number of requests to queue on the server (10)") do |max_connection_queue|
           @options[:max_connection_queue] = max_connection_queue.to_i
         end
+        opts.on("-p", "--pid-file [PID_FILE]", "The file to store the server PID in (/var/run/depot.pid)") do |pid_file|
+          @options[:pid_file] = pid_file
+        end
+        opts.on("-l", "--log-file [LOG_FILE]", "The file to store the server log in (/var/log/depot.log)") do |log_file|
+          @options[:log_file] = log_file
+        end
         opts.on("-h", "--help", "Show help") do
           puts opts
           exit
@@ -95,7 +101,11 @@ class CertificateDepot
         puts CertificateDepot.configuration_example(path)
       when :start
         return if no_path(argv)
-        CertificateDepot.start(path, @options)
+        if CertificateDepot.start(path, @options)
+          puts "[!] Starting server"
+        else
+          puts "[!] Can't start the server"
+        end
       when :stop
         if CertificateDepot.stop(@options)
           puts "[!] Stopping server"

@@ -9,7 +9,7 @@ class CertificateDepot
     SILENT  = 9
     
     # Holds the current log level
-    attr_accessor :level
+    attr_accessor :file, :level
     
     # Creates a new Log instance.
     def initialize(file, options={})

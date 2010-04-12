@@ -56,8 +56,17 @@ describe "CertificateDepot::Runner, concerning working on an existing depot with
   end
   
   it "starts a new server" do
-    CertificateDepot.expects(:start)
-    runner(['start', @path]).run
+    CertificateDepot.expects(:start).returns(true)
+    capture_stdout do
+      runner(['start', @path]).run
+    end.should == "[!] Starting server\n"
+  end
+  
+  it "starts nothing when something happens" do
+    CertificateDepot.expects(:start).returns(false)
+    capture_stdout do
+      runner(['start', @path]).run
+    end.should == "[!] Can't start the server\n"
   end
   
   it "stops a running server" do
