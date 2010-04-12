@@ -1,6 +1,3 @@
-* Trap signals in server for nice shutdowns
-* Add logging
-* More error handling
 * Validate input
   - Email address when creating a certificate
   - Common name for server certificate
