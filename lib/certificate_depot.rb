@@ -105,6 +105,10 @@ SSLCACertificateFile    \"#{certificate_path(path)}\""
     CertificateDepot::Server.listen(new(path), options)
   end
   
+  def self.shutdown
+    CertificateDepot::Server.kill
+  end
+  
   def self.run(argv)
     runner = ::CertificateDepot::Runner.new(argv)
     runner.run

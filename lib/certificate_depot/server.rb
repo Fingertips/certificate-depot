@@ -22,6 +22,7 @@ class CertificateDepot
   class Server
     attr_accessor :socket, :depot
     
+    POSSIBLE_PID_FILES = ['/var/run/depot.pid', File.expand_path('~/.depot.pid')]
     READ_BUFFER_SIZE = 16 * 1024
     DEFAULTS = {
       :host                 => '127.0.0.1',
@@ -36,9 +37,17 @@ class CertificateDepot
       @depot = depot
       
       # Override the default with user supplied options.
-      @options = options
+      @options = options.dup
       DEFAULTS.keys.each do |key|
         @options[key] ||= DEFAULTS[key]
+      end
+      
+      # If someone specifies a PID file we have to try that instead of the
+      # default.
+      if pid_file = @options.delete(:pid_file)
+        @options[:possible_pid_files] = [pid_file]
+      else
+        @options[:possible_pid_files] = POSSIBLE_PID_FILES
       end
       
       # Contains the lifelines to all the workers. They are indexed by the
@@ -64,11 +73,45 @@ class CertificateDepot
     # spawns new workers if it needs to. Finally it sleeps for a while so the
     # the runloop doesn't keep busy all the time.
     def run
-      fork do
+      save_pid_to_file(fork do
         loop do
           reap_workers
           spawn_workers
           sleep
+        end
+      end)
+    end
+    
+    # Write the PID of the process with the mainloop to the filesystem so we
+    # read it later on to signal the server to shutdown.
+    def save_pid_to_file(pid)
+      @options[:possible_pid_files].each do |pid_file|
+        begin
+          File.open(pid_file, 'w') { |file| file.write(pid.to_s) }
+          return pid_file
+        rescue Errno::EACCES
+        end
+      end
+    end
+    
+    # Reads the PID of the process with the mainloop from the filesystem. Used
+    # for sending signals to a running server.
+    def load_pid_from_file
+      best_match = @options[:possible_pid_files].inject([]) do |matches, pid_file|
+        begin
+          matches << [File.atime(pid_file), File.read(pid_file).to_i]
+        rescue Errno::EACCES, Errno::ENOENT
+        end; matches
+      end.compact.sort.last
+      best_match[1]
+    end
+    
+    # Removes all possible PID files.
+    def remove_pid_file
+      @options[:possible_pid_files].each do |pid_file|
+        begin
+          File.unlink(pid_file)
+        rescue Errno::EACCES
         end
       end
     end
@@ -159,11 +202,22 @@ class CertificateDepot
       @options[:process_count] - @workers.length
     end
     
+    # Sends the QUIT signal to the server process.
+    def kill
+      Process.kill(:QUIT, load_pid_from_file)
+    end
+    
     # Creates a new server instance and starts listening on its configured
     # host and port. Returns once the server was started.
     def self.listen(depot, options={})
       server = new(depot, options)
       server.listen
+    end
+    
+    # Finds the server PID and kills it causing the workers to go down as well.
+    def self.kill(options={})
+      server = new(options)
+      server.kill
     end
   end
 end
