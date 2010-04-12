@@ -12,7 +12,8 @@ class CertificateDepot
     
     # Creates a new worker instance. The first argument is a server instance.
     def initialize(server)
-      @server   = server
+      @server  = server
+      @signals = []
     end
     
     # Generates a new client certificate and writes it to the socket
@@ -43,7 +44,7 @@ class CertificateDepot
     # close the socket.
     def process_incoming_socket(socket, address)
       input = socket.gets
-      server.log.debug("Worker #{Process.pid}: Got input: #{input}")
+      server.log.debug("Got input: #{input.strip}")
       run_command(socket, *self.class.parse_command(input))
       socket.close
     end
@@ -52,26 +53,51 @@ class CertificateDepot
     # following three things happens: server gets a new request, activity on
     # the lifeline to the server, or 2 seconds go by.
     def run
+      trap_signals
       loop do
-        # IO.select returns either a triplet of lists with IO objects that
-        # need attention or nil on timeout of 2 seconds.
-        if needy = IO.select([server.socket], nil, [lifeline], 2)
-          # The first of the triplet are server sockets. If these are active
-          # it means there is a new incoming connection.
-          if incoming = needy.first
-            incoming.each do |socket|
-              begin
-                process_incoming_socket(*socket.accept_nonblock)
-              rescue Errno::EAGAIN, Errno::ECONNABORTED
+        break if signals_want_shutdown
+        begin
+          # IO.select returns either a triplet of lists with IO objects that
+          # need attention or nil on timeout of 2 seconds.
+          if needy = IO.select([server.socket, lifeline], nil, [server.socket, lifeline], 2)
+            server.log.debug("Detected activity on: #{needy.inspect}")
+            # If the lifeline is active the server went down and we need to go
+            # down as well.
+            break if needy.flatten.any? { |io| !io.respond_to?(:accept_nonblock) }
+            # Otherwise we handle incoming requests
+            needy.flatten.each do |io|
+              if io.respond_to?(:accept_nonblock)
+                begin
+                  process_incoming_socket(*io.accept_nonblock)
+                rescue Errno::EAGAIN, Errno::ECONNABORTED
+                end
               end
             end
-          # The last of the triplet is the lifeline. If this is active, the
-          # server probably went down so we need to go down as well.
-          elsif lifelines = needy.last
-            exit 1
           end
+        rescue EOFError, Errno::EAGAIN, Errno::EINTR, Errno::EBADF, IOError
         end
       end
+      cleanup
+    end
+    
+    # Cleanup all worker resources
+    def cleanup
+      server.log.info("Shutting down")
+      begin
+        lifeline.close
+      rescue Errno::EPIPE
+      end
+    end
+    
+    # Installs signal traps to listen for incoming signals to the process.
+    def trap_signals
+      trap(:QUIT) { @signals << :QUIT }
+      trap(:EXIT) { @signals << :EXIT }
+    end
+    
+    # Returns true when the signals received by the process demand a shutdown
+    def signals_want_shutdown
+      !@signals.empty?
     end
     
     # Parses a command issues by a client.

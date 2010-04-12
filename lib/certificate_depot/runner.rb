@@ -95,9 +95,13 @@ class CertificateDepot
         puts CertificateDepot.configuration_example(path)
       when :start
         return if no_path(argv)
-        CertificateDepot.listen(path, @options)
+        CertificateDepot.start(path, @options)
       when :stop
-        CertificateDepot.shutdown
+        if CertificateDepot.stop(@options)
+          puts "[!] Stopping server"
+        else
+          puts "[!] Can't find a running server"
+        end
       else
         puts parser.to_s
       end

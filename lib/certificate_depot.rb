@@ -102,12 +102,12 @@ SSLVerifyClient require
 SSLCACertificateFile    \"#{certificate_path(path)}\""
   end
   
-  def self.listen(path, options={})
-    CertificateDepot::Server.listen(new(path), options)
+  def self.start(path, options={})
+    CertificateDepot::Server.start(new(path), options)
   end
   
-  def self.shutdown
-    CertificateDepot::Server.kill
+  def self.stop(options={})
+    CertificateDepot::Server.stop(options)
   end
   
   def self.run(argv)

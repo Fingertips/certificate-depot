@@ -31,6 +31,12 @@ class CertificateDepot
       @file.flock(File::LOCK_EX)
       @file.write(self.class.format(*args)) if message_level >= level
       @file.flock(File::LOCK_UN)
+    rescue IOError
+    end
+    
+    # Close the logger
+    def close
+      @file.close
     end
     
     # Format the log message

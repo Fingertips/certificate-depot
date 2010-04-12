@@ -66,6 +66,9 @@ class CertificateDepot
       # Workers are instances of CertificateDepot::Worker. They are indexed by
       # their own PID.
       @workers = {}
+      
+      # Signals received by the process
+      @signals = []
     end
     
     # Returns a Log object for the server
@@ -83,26 +86,36 @@ class CertificateDepot
     
     # Start behaving like a server. This method returns once the server has
     # completely started.
-    def listen
-      log.info("Starting Certificate Depot server")
-      trap_signals
-      setup_socket
-      run
-    end
-    
+    #
     # Forks a process and starts a runloop in the fork. The runloop does
     # worker housekeeping. It does so in three phases. First it removes all
     # non-functional workers from its internal structures. After that it
     # spawns new workers if it needs to. Finally it sleeps for a while so the
     # the runloop doesn't keep busy all the time.
     def run
+      log.info("Starting Certificate Depot server")
+      trap_signals
+      setup_socket
       save_pid_to_file(fork do
         loop do
+          break if signals_want_shutdown
           reap_workers
           spawn_workers
           sleep
         end
+        cleanup
       end)
+    end
+    
+    # Installs signal traps to listen for incoming signals to the process.
+    def trap_signals
+      trap(:QUIT) { @signals << :QUIT }
+      trap(:EXIT) { @signals << :EXIT }
+    end
+    
+    # Returns true when the signals received by the process demand a shutdown
+    def signals_want_shutdown
+      !@signals.empty?
     end
     
     # Write the PID of the process with the mainloop to the filesystem so we
@@ -200,22 +213,27 @@ class CertificateDepot
     def sleep
       # Returns with active IO objects if any of them are written to.
       # Otherwise it times out after two seconds.
-      needy = IO.select(@lifelines.values, nil, nil, 2)
-      # Read everything coming in on the lifelines and discard it because
-      # the contents doesn't matter.
-      needy.flatten.each do |lifeline|
-        loop { lifeline.read_nonblock(READ_BUFFER_SIZE) } unless lifeline.closed?
-      end if needy
-    rescue EOFError, Errno::EAGAIN, Errno::EINTR
+      if needy = IO.select(@lifelines.values, nil, @lifelines.values, 2)
+        log.debug("Detected activity on: #{needy.inspect}") 
+        # Read everything coming in on the lifelines and discard it because
+        # the contents doesn't matter.
+        needy.flatten.each do |lifeline|
+          loop { lifeline.read_nonblock(READ_BUFFER_SIZE) } unless lifeline.closed?
+        end if needy
+      end
+    rescue EOFError, Errno::EAGAIN, Errno::EINTR, Errno::EBADF, IOError
     end
     
-    # Installs signal traps to listen for incoming signals to the process.
-    def trap_signals
-      # Cleanup on exit
-      trap(:EXIT) do
-        @lifelines.each { |pid, lifeline| lifeline.close }
-        socket.close
+    # Cleanup all server resources.
+    def cleanup
+      log.info("Shutting down")
+      @lifelines.each do |pid, lifeline|
+        begin
+          lifeline.close
+        rescue IOError
+        end
       end
+      socket.close
     end
     
     # Creates the socket the server listens on and binds it to the configured
@@ -225,7 +243,7 @@ class CertificateDepot
       address = Socket.pack_sockaddr_in(@options[:port], @options[:host])
       socket.bind(address)
       socket.listen(@options[:max_connection_queue])
-      log.info("Listening on #{address}")
+      log.info("Listening on #{@options[:host]}:#{@options[:port]}")
     end
     
     # Returns the number of workers that need to be created in order to get to
@@ -237,18 +255,21 @@ class CertificateDepot
     # Sends the QUIT signal to the server process.
     def kill
       Process.kill(:QUIT, load_pid_from_file)
+      true
+    rescue Errno::ESRCH
+      false
     end
     
     # Creates a new server instance and starts listening on its configured
     # host and port. Returns once the server was started.
-    def self.listen(depot, options={})
+    def self.start(depot, options={})
       server = new(depot, options)
-      server.listen
+      server.run
     end
     
     # Finds the server PID and kills it causing the workers to go down as well.
-    def self.kill(options={})
-      server = new(options)
+    def self.stop(options={})
+      server = new(nil, options)
       server.kill
     end
   end
