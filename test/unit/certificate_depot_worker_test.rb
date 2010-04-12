@@ -1,7 +1,7 @@
 require File.expand_path('../../test_helper', __FILE__)
 
 describe "CertificateDepot::Worker" do
-  xit "parses commands" do
+  it "parses commands" do
     [
       ['', []],
       ['generate',                   [:generate]],
@@ -19,7 +19,7 @@ describe "CertificateDepot::Worker" do
     parts[0][1].should == 'recorder-12'
   end
   
-  xit "runs the generate command" do
+  it "runs the generate command" do
     keypair = mock('Keypair')
     keypair.stubs(:private_key).returns("PRIVATE KEY\n")
     certificate = mock('Certificate')
@@ -38,5 +38,25 @@ describe "CertificateDepot::Worker" do
     worker = CertificateDepot::Worker.new(server)
     worker.run_command(socket, :generate, subject)
     socket.written.join.should == "PRIVATE KEY\nCERTIFICATE\n"
+  end
+  
+  it "runs the shutdown command" do
+    worker = CertificateDepot::Worker.new(nil)
+    worker.expects(:exit).with(1)
+    worker.run_command(nil, :shutdown)
+  end
+  
+  it "runs the help command without arguments" do
+    socket = Collector.new
+    worker = CertificateDepot::Worker.new(nil)
+    worker.run_command(socket, :help)
+    socket.written.join.should == "generate help shutdown\n"
+  end
+  
+  it "runs the help command with an argument" do
+    socket = Collector.new
+    worker = CertificateDepot::Worker.new(nil)
+    worker.run_command(socket, :help, 'generate')
+    socket.written.join.should == CertificateDepot::Worker.help('generate')
   end
 end

@@ -27,6 +27,15 @@ class CertificateDepot
       socket.write certificate.certificate.to_s
     end
     
+    # Writes help to the socket about a topic or a list of commands
+    def help(socket, command)
+      if command
+        socket.write(self.class.help(command.downcase))
+      else
+        socket.write("generate help shutdown\n")
+      end
+    end
+    
     # Runs a command and writes the result to the request socket.
     def run_command(socket, *args)
       args    = args.dup
@@ -35,6 +44,8 @@ class CertificateDepot
       case command
       when :generate
         generate(socket, args[0])
+      when :help
+        help(socket, args[0])
       when :shutdown
         exit 1
       end
@@ -113,6 +124,38 @@ class CertificateDepot
       end
       
       parts
+    end
+    
+    # Returns help text for a certain command
+    def self.help(command)
+      case command
+      when 'generate'
+"GENERATE
+  generate <distinguished name>
+RETURNS
+  A private key and certificate in PEM format.
+EXAMPLE
+  generate /UID=12/CN=Bob Owner,emailAddress=bob@example.com
+"
+      when 'help'
+"HELP
+  help <command>
+RETURNS
+  A description of the command.
+EXAMPLE
+  help generate
+"
+      when 'shutdown'
+"SHUTDOWN
+  shutdown
+RETURNS
+  Kills the current worker handling the request.
+EXAMPLE
+  shutdown
+"
+      else
+        "Unknown command #{command}"
+      end
     end
   end
 end
