@@ -98,7 +98,7 @@ class CertificateDepot
       setup_socket
       save_pid_to_file(fork do
         loop do
-          break if signals_want_shutdown
+          break if signals_want_shutdown?
           reap_workers
           spawn_workers
           sleep
@@ -114,7 +114,7 @@ class CertificateDepot
     end
     
     # Returns true when the signals received by the process demand a shutdown
-    def signals_want_shutdown
+    def signals_want_shutdown?
       !@signals.empty?
     end
     
@@ -143,7 +143,7 @@ class CertificateDepot
         rescue Errno::EACCES, Errno::ENOENT
         end; matches
       end.compact.sort.last
-      best_match[1]
+      best_match[1] if best_match
     end
     
     # Removes all possible PID files.
@@ -234,6 +234,7 @@ class CertificateDepot
         end
       end
       socket.close
+      remove_pid_file
     end
     
     # Creates the socket the server listens on and binds it to the configured
