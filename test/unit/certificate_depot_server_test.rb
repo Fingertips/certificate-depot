@@ -56,19 +56,6 @@ describe "CertificateDepot::Server" do
     server.load_pid_from_file.should == nil
   end
   
-  def reap_workers
-    # Don't try to find more dead workers than the process count
-    @workers.length.times do
-      # We use +waitpid+ to find any child process which has exited. It
-      # immediately returns when there aren't any dead processes.
-      if pid = Process.waitpid(-1, Process::WNOHANG)
-        despawn_worker(pid)
-      else
-        return # Stop when we don't find any
-      end
-    end
-  end
-  
   it "reaps workers" do
     server = CertificateDepot::Server.new(@depot)
     server.instance_eval {
