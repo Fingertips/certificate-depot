@@ -42,7 +42,9 @@ class CertificateDepot
     # Processes an incoming request. Parse the command, run the command, and
     # close the socket.
     def process_incoming_socket(socket, address)
-      run_command(socket, *self.class.parse_command(socket.gets))
+      input = socket.gets
+      server.log.debug("Worker #{Process.pid}: Got input: #{input}")
+      run_command(socket, *self.class.parse_command(input))
       socket.close
     end
     

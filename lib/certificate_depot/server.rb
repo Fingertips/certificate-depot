@@ -1,5 +1,5 @@
 require 'socket'
-require 'fcntl'
+require 'logger'
 
 class CertificateDepot
   # The CertificateDepot server is a pre-forking server. This basically means
@@ -23,6 +23,7 @@ class CertificateDepot
     attr_accessor :socket, :depot
     
     POSSIBLE_PID_FILES = ['/var/run/depot.pid', File.expand_path('~/.depot.pid')]
+    POSSIBLE_LOG_FILES = ['/var/log/depot.log', File.expand_path('~/depot.log')]
     READ_BUFFER_SIZE = 16 * 1024
     DEFAULTS = {
       :host                 => '127.0.0.1',
@@ -50,6 +51,14 @@ class CertificateDepot
         @options[:possible_pid_files] = POSSIBLE_PID_FILES
       end
       
+      # If someone specifies a log file we have to try that instead of the
+      # default.
+      if log_file = @options.delete(:log_file)
+        @options[:possible_log_files] = [log_file]
+      else
+        @options[:possible_log_files] = POSSIBLE_LOG_FILES
+      end
+      
       # Contains the lifelines to all the workers. They are indexed by the
       # worker's PID.
       @lifelines = {}
@@ -59,9 +68,23 @@ class CertificateDepot
       @workers = {}
     end
     
+    # Returns a Log object for the server
+    def log
+      if @log.nil?
+        @options[:possible_log_files].each do |log_file|
+          begin
+            file = File.open(log_file, File::WRONLY|File::APPEND|File::CREAT)
+            @log = CertificateDepot::Log.new(file)
+          rescue Errno::EACCES
+          end
+        end
+      end; @log
+    end
+    
     # Start behaving like a server. This method returns once the server has
     # completely started.
     def listen
+      log.info("Starting Certificate Depot server")
       trap_signals
       setup_socket
       run
@@ -88,6 +111,7 @@ class CertificateDepot
       @options[:possible_pid_files].each do |pid_file|
         begin
           File.open(pid_file, 'w') { |file| file.write(pid.to_s) }
+          log.debug("Writing PID to `#{pid_file}'")
           return pid_file
         rescue Errno::EACCES
         end
@@ -99,7 +123,10 @@ class CertificateDepot
     def load_pid_from_file
       best_match = @options[:possible_pid_files].inject([]) do |matches, pid_file|
         begin
-          matches << [File.atime(pid_file), File.read(pid_file).to_i]
+          log.debug("Considering reading PID from `#{pid_file}'")
+          possibility = [File.atime(pid_file), File.read(pid_file).to_i]
+          log.debug(" - created #{possibility[0]}, contains PID: #{possibility[1]}")
+          matches << possibility
         rescue Errno::EACCES, Errno::ENOENT
         end; matches
       end.compact.sort.last
@@ -111,6 +138,7 @@ class CertificateDepot
       @options[:possible_pid_files].each do |pid_file|
         begin
           File.unlink(pid_file)
+          log.debug("Removed PID file `#{pid_file}'")
         rescue Errno::EACCES
         end
       end
@@ -133,6 +161,7 @@ class CertificateDepot
     
     # Deletes references to workers from the server instance
     def despawn_worker(pid)
+      log.debug("Removing worker #{pid}")
       @workers.delete(pid)
       @lifelines.delete(pid)
     end
@@ -159,6 +188,8 @@ class CertificateDepot
         # We close the client side of the pipe in this process otherwise we
         # don't get an EOF when reading from it.
         lifeline.last.close
+        
+        log.debug("Spawned worker #{pid}")
       end
     end
     
@@ -194,6 +225,7 @@ class CertificateDepot
       address = Socket.pack_sockaddr_in(@options[:port], @options[:host])
       socket.bind(address)
       socket.listen(@options[:max_connection_queue])
+      log.info("Listening on #{address}")
     end
     
     # Returns the number of workers that need to be created in order to get to

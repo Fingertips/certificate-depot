@@ -4,6 +4,7 @@ require 'fileutils'
 class CertificateDepot
   autoload :Certificate, 'certificate_depot/certificate'
   autoload :Keypair,     'certificate_depot/keypair'
+  autoload :Log,         'certificate_depot/log'
   autoload :Runner,      'certificate_depot/runner'
   autoload :Server,      'certificate_depot/server'
   autoload :Store,       'certificate_depot/store'
