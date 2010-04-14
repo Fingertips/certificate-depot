@@ -1,3 +1,4 @@
+* Allow people to set more subject information for the CA certificate
 * Validate input
   - Email address when creating a certificate
   - Common name for server certificate

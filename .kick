@@ -1,8 +1,18 @@
+recipe :ignore
+ignore(/^(html|tmp)/)
+
 recipe :ruby
 
 class Ruby
   def self.is_test_file?(path)
     path if File.exist?(File.expand_path("../#{path}", __FILE__))
+  end
+end
+
+process do |files|
+  if files.any? { |file| file.start_with?('lib') }
+    log "Updating documentation in the background"
+    system "rake documentation:generate &> /dev/null &"
   end
 end
 
