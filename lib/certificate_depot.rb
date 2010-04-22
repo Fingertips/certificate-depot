@@ -1,5 +1,6 @@
 require 'openssl'
 require 'fileutils'
+require 'monitor'
 
 # = CertificateDepot
 #
@@ -18,7 +19,9 @@ require 'fileutils'
 # then you can assume they are in fact party A.
 #
 # In a Public Key Infrastructure this means that the CA has a private key
-# which only he knows. He uses this key to sign certificates stating that the # person owning the certificate is who the certificate says they are. Because # there is a public key associated with the certificate anyone can use a
+# which only he knows. He uses this key to sign certificates stating that the
+# person owning the certificate is who the certificate says they are. Because
+# there is a public key associated with the certificate anyone can use a
 # crytographic challenge to make sure the owner has the private key to this
 # certificate.
 #
@@ -107,16 +110,19 @@ class CertificateDepot
   # See CertificateDepot::Certificate#generate for all available options.
   def generate_keypair_and_certificate(options={})
     keypair     = CertificateDepot::Keypair.generate
+    certificate = nil
     
-    attributes = options
-    attributes[:ca_certificate] = ca_certificate
-    attributes[:public_key]     = keypair.public_key
-    attributes[:private_key]    = ca_private_key
-    attributes[:serial_number]  = certificates.next_serial_number
-    certificate = CertificateDepot::Certificate.generate(attributes)
-    
-    certificates << certificate
-    certificates.sync
+    certificates.synchronize do
+      attributes = options
+      attributes[:ca_certificate] = ca_certificate
+      attributes[:public_key]     = keypair.public_key
+      attributes[:private_key]    = ca_private_key
+      attributes[:serial_number]  = certificates.next_serial_number
+      certificate = CertificateDepot::Certificate.generate(attributes)
+      
+      certificates << certificate
+      certificates.sync
+    end
     
     [keypair, certificate]
   end
@@ -124,7 +130,10 @@ class CertificateDepot
   # Returns an instance of CertificateDepot::Store representing all
   # certificates in the depot.
   def certificates
-    @certificates ||= CertificateDepot::Store.new(self.class.certificates_path(path))
+    if @certificates.nil?
+      @certificates = CertificateDepot::Store.new(self.class.certificates_path(path))
+      @certificates.extend(MonitorMixin)
+    end; @certificates
   end
   
   def self.create_directories(path)
