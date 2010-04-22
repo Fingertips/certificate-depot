@@ -48,10 +48,10 @@ class CertificateDepot
         opts.on("-P", "--port [PORT]", "The port to listen on (35553)") do |port|
           @options[:port] = port.to_i
         end
-        opts.on("-n", "--process-count", "The number of worker processes to spawn (2)") do |process_count|
+        opts.on("-n", "--process-count [COUNT]", "The number of worker processes to spawn (2)") do |process_count|
           @options[:process_count] = process_count.to_i
         end
-        opts.on("-q", "--max-connection-queue", "The number of requests to queue on the server (10)") do |max_connection_queue|
+        opts.on("-q", "--max-connection-queue [MAX]", "The number of requests to queue on the server (10)") do |max_connection_queue|
           @options[:max_connection_queue] = max_connection_queue.to_i
         end
         opts.on("-p", "--pid-file [PID_FILE]", "The file to store the server PID in (/var/run/depot.pid)") do |pid_file|
