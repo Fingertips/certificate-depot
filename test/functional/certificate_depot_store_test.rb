@@ -34,7 +34,7 @@ describe "CertificateDepot::Store, with certificates" do
   end
   
   it "syncs to disk" do
-    entries(@store.path).should == %w(1.crt 2.crt 3.crt)
+    entries(@store.path).sort.should == %w(1.crt 2.crt 3.crt)
   end
   
   it "loads from disk" do
