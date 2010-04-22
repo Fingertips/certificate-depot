@@ -1,12 +1,14 @@
 require 'optparse'
  
 class CertificateDepot
+  # The Runner class handles commands issued to the command-line utility.
   class Runner
     def initialize(argv)
       @argv = argv
       @options = {}
     end
     
+    # Returns an option parser.
     def parser
       @parser ||= OptionParser.new do |opts|
         #               ---------------------------------------------------------------------------
@@ -67,6 +69,8 @@ class CertificateDepot
       end
     end
     
+    # Utility method which returns false if there is a path in argv. When
+    # there is no path in argv it returns true and prins a warning.
     def no_path(argv)
       if argv.length == 0
         puts "[!] Please specify the path to the depot you want to operate on"
@@ -76,6 +80,8 @@ class CertificateDepot
       end
     end
     
+    # Runs command with arguments. Commands and arguments are documented in
+    # the help message of the command-line utility.
     def run_command(command, argv)
       path = File.expand_path(argv[0].to_s)
       case command
@@ -117,6 +123,8 @@ class CertificateDepot
       end
     end
     
+    # Runs the command found in the arguments. If the arguments don't contain
+    # a command the help message is show.
     def run
       argv = @argv.dup
       parser.parse!(argv)
