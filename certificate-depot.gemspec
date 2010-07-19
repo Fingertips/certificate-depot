@@ -9,14 +9,13 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Manfred Stienstra"]
-  s.date = %q{2010-04-22}
+  s.date = %q{2010-07-19}
   s.default_executable = %q{depot}
   s.description = %q{Certificate depot is a mini Certification Authority for TLS client certificates.}
   s.email = %q{manfred@fngtps.com}
   s.executables = ["depot"]
   s.extra_rdoc_files = [
-    "README.rdoc",
-     "TODO"
+    "TODO"
   ]
   s.files = [
     "bin/depot",
@@ -31,14 +30,14 @@ Gem::Specification.new do |s|
   ]
   s.rdoc_options = ["--charset=UTF-8"]
   s.require_paths = ["lib"]
-  s.rubygems_version = %q{1.3.5}
+  s.rubygems_version = %q{1.3.7}
   s.summary = %q{Certificate depot is a mini Certification Authority for TLS client certificates.}
 
   if s.respond_to? :specification_version then
     current_version = Gem::Specification::CURRENT_SPECIFICATION_VERSION
     s.specification_version = 3
 
-    if Gem::Version.new(Gem::RubyGemsVersion) >= Gem::Version.new('1.2.0') then
+    if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then
       s.add_development_dependency(%q<mocha>, [">= 0"])
       s.add_development_dependency(%q<test-spec>, [">= 0"])
     else

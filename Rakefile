@@ -27,6 +27,7 @@ begin
     s.email = "manfred@fngtps.com"
     s.authors = ["Manfred Stienstra"]
     s.files = FileList['lib/**/*.rb', 'bin/*'].to_a
+    s.executables = ['depot']
     s.add_development_dependency('mocha')
     s.add_development_dependency('test-spec')
   end
