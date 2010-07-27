@@ -9,14 +9,13 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Manfred Stienstra"]
-  s.date = %q{2010-07-26}
+  s.date = %q{2010-07-27}
   s.default_executable = %q{depot}
   s.description = %q{Certificate depot is a mini Certification Authority for TLS client certificates.}
   s.email = %q{manfred@fngtps.com}
   s.executables = ["depot"]
   s.extra_rdoc_files = [
-    "README.rdoc",
-     "TODO"
+    "TODO"
   ]
   s.files = [
     "bin/depot",
