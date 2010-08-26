@@ -21,7 +21,17 @@ end
 
 begin
   require 'jeweler'
-  Jeweler::Tasks.new do |s|
+  class InstallWithoutBuild < Jeweler::Tasks
+    def define
+      super
+      desc "Install gem without build"
+      task :install_without_build do
+        version = jeweler.version
+        sh "gem install pkg/#{gemspec.name}-#{version}.gem"
+      end
+    end
+  end
+  InstallWithoutBuild.new do |s|
     s.name = "certificate-depot"
     s.summary = s.description = "Certificate depot is a mini Certification Authority for TLS client certificates."
     s.email = "manfred@fngtps.com"
